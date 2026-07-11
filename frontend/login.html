@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign in - AI Sales Forecasting</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="login-shell">
+      <section class="login-side">
+        <div class="login-brand">
+          <div class="brand-mark">SF</div>
+          <strong>AI Sales Forecasting</strong>
+        </div>
+
+        <div class="login-side-copy">
+          <p class="eyebrow">Revenue intelligence workspace</p>
+          <h1>Every figure, accounted for.</h1>
+          <p>
+            Sign in to review sales trends, run 14-day forecasts, and keep
+            an accurate ledger of demand across products and regions.
+          </p>
+        </div>
+
+        <div class="login-side-footnote">SALES_DB &middot; FORECAST_API &middot; SECURE SESSION</div>
+      </section>
+
+      <section class="login-main">
+        <div class="login-card">
+          <!-- ===== STEP: LOGIN ===== -->
+          <div class="login-step active" id="stepLogin">
+            <div class="login-card-head">
+              <p class="eyebrow">Account access</p>
+              <h2>Sign in</h2>
+            </div>
+
+            <div class="login-error" id="loginError"></div>
+
+            <form id="loginForm">
+              <div class="login-field">
+                <label for="loginIdentifier">Username or email</label>
+                <input id="loginIdentifier" type="text" autocomplete="username" required />
+              </div>
+              <div class="login-field">
+                <label for="loginPassword">Password</label>
+                <input id="loginPassword" type="password" autocomplete="current-password" required />
+              </div>
+              <div class="login-links">
+                <button type="button" id="goForgotBtn">Forgot password?</button>
+              </div>
+              <button type="submit" class="login-submit" id="loginSubmitBtn">Sign in</button>
+            </form>
+
+            <div class="login-toggle">
+              <span>Don't have an account?</span>
+              <button type="button" id="goRegisterBtn">Create one</button>
+            </div>
+
+            <div class="login-stamp"><span></span> Session stays local to this browser tab</div>
+          </div>
+
+          <!-- ===== STEP: REGISTER ===== -->
+          <div class="login-step" id="stepRegister">
+            <div class="login-card-head">
+              <p class="eyebrow">New account</p>
+              <h2>Create account</h2>
+            </div>
+
+            <div class="login-error" id="registerError"></div>
+
+            <form id="registerForm">
+              <div class="login-field-row">
+                <div class="login-field">
+                  <label for="firstName">First name</label>
+                  <input id="firstName" type="text" autocomplete="given-name" required />
+                </div>
+                <div class="login-field">
+                  <label for="lastName">Last name</label>
+                  <input id="lastName" type="text" autocomplete="family-name" required />
+                </div>
+              </div>
+              <div class="login-field">
+                <label for="registerEmail">Email</label>
+                <input id="registerEmail" type="email" autocomplete="email" required />
+              </div>
+              <div class="login-field">
+                <label for="registerUsername">Username</label>
+                <input id="registerUsername" type="text" autocomplete="username" required />
+              </div>
+              <div class="login-field">
+                <label for="registerPassword">Password</label>
+                <input id="registerPassword" type="password" autocomplete="new-password" required />
+              </div>
+              <button type="submit" class="login-submit" id="registerSubmitBtn">Create account</button>
+            </form>
+
+            <div class="login-toggle">
+              <span>Already have an account?</span>
+              <button type="button" id="backToLoginFromRegisterBtn">Sign in</button>
+            </div>
+          </div>
+
+          <!-- ===== STEP: VERIFY OTP ===== -->
+          <div class="login-step" id="stepVerify">
+            <div class="login-card-head">
+              <p class="eyebrow">Verify your email</p>
+              <h2>Enter your code</h2>
+            </div>
+
+            <p class="login-hint">
+              We sent a 6-digit code to <strong id="verifyEmailLabel"></strong>. Enter it below to
+              activate your account.
+            </p>
+
+            <div class="login-error" id="verifyError"></div>
+
+            <form id="verifyForm">
+              <div class="login-field">
+                <label for="otpInput">Verification code</label>
+                <input id="otpInput" class="otp-input" type="text" inputmode="numeric" maxlength="6" required />
+              </div>
+              <button type="submit" class="login-submit" id="verifySubmitBtn">Verify and continue</button>
+            </form>
+
+            <div class="login-toggle">
+              <span>Didn't get a code?</span>
+              <button type="button" id="resendOtpBtn">Resend</button>
+            </div>
+          </div>
+
+          <!-- ===== STEP: FORGOT PASSWORD ===== -->
+          <div class="login-step" id="stepForgot">
+            <div class="login-card-head">
+              <p class="eyebrow">Reset password</p>
+              <h2>Forgot password</h2>
+            </div>
+
+            <p class="login-hint">Enter your registered email and we'll send you a link to reset your password.</p>
+
+            <div class="login-error" id="forgotError"></div>
+            <div class="login-success" id="forgotSuccess"></div>
+
+            <form id="forgotForm">
+              <div class="login-field">
+                <label for="forgotEmail">Email</label>
+                <input id="forgotEmail" type="email" autocomplete="email" required />
+              </div>
+              <button type="submit" class="login-submit" id="forgotSubmitBtn">Send reset link</button>
+            </form>
+
+            <div class="login-toggle">
+              <span>Remembered it?</span>
+              <button type="button" id="backToLoginFromForgotBtn">Sign in</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+      if (Auth.isLoggedIn()) {
+        window.location.href = "index.html";
+      }
+
+      const steps = {
+        login: document.getElementById("stepLogin"),
+        register: document.getElementById("stepRegister"),
+        verify: document.getElementById("stepVerify"),
+        forgot: document.getElementById("stepForgot"),
+      };
+
+      function showStep(name) {
+        Object.values(steps).forEach((el) => el.classList.remove("active"));
+        steps[name].classList.add("active");
+      }
+
+      function showError(id, message) {
+        const el = document.getElementById(id);
+        el.textContent = message;
+        el.classList.add("visible");
+      }
+
+      function clearError(id) {
+        const el = document.getElementById(id);
+        el.classList.remove("visible");
+        el.textContent = "";
+      }
+
+      function showSuccess(id, message) {
+        const el = document.getElementById(id);
+        el.textContent = message;
+        el.classList.add("visible");
+      }
+
+      // ---------- navigation ----------
+      document.getElementById("goRegisterBtn").addEventListener("click", () => showStep("register"));
+      document.getElementById("backToLoginFromRegisterBtn").addEventListener("click", () => showStep("login"));
+      document.getElementById("goForgotBtn").addEventListener("click", () => showStep("forgot"));
+      document.getElementById("backToLoginFromForgotBtn").addEventListener("click", () => showStep("login"));
+
+      // ---------- login ----------
+      document.getElementById("loginForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearError("loginError");
+        const identifier = document.getElementById("loginIdentifier").value.trim();
+        const password = document.getElementById("loginPassword").value;
+        const btn = document.getElementById("loginSubmitBtn");
+
+        btn.disabled = true;
+        btn.textContent = "Signing in...";
+        try {
+          await Auth.login(identifier, password);
+          window.location.href = "index.html";
+        } catch (error) {
+          showError("loginError", error.message);
+          btn.disabled = false;
+          btn.textContent = "Sign in";
+        }
+      });
+
+      // ---------- register ----------
+      let pendingEmail = "";
+
+      document.getElementById("registerForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearError("registerError");
+
+        const firstName = document.getElementById("firstName").value.trim();
+        const lastName = document.getElementById("lastName").value.trim();
+        const email = document.getElementById("registerEmail").value.trim();
+        const username = document.getElementById("registerUsername").value.trim();
+        const password = document.getElementById("registerPassword").value;
+        const btn = document.getElementById("registerSubmitBtn");
+
+        btn.disabled = true;
+        btn.textContent = "Creating account...";
+        try {
+          const result = await Auth.register({ firstName, lastName, email, username, password });
+          pendingEmail = result.email || email;
+          document.getElementById("verifyEmailLabel").textContent = pendingEmail;
+          showStep("verify");
+        } catch (error) {
+          showError("registerError", error.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Create account";
+        }
+      });
+
+      // ---------- verify OTP ----------
+      document.getElementById("verifyForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearError("verifyError");
+        const otp = document.getElementById("otpInput").value.trim();
+        const btn = document.getElementById("verifySubmitBtn");
+
+        btn.disabled = true;
+        btn.textContent = "Verifying...";
+        try {
+          await Auth.verifyOtp(pendingEmail, otp);
+          window.location.href = "index.html";
+        } catch (error) {
+          showError("verifyError", error.message);
+          btn.disabled = false;
+          btn.textContent = "Verify and continue";
+        }
+      });
+
+      document.getElementById("resendOtpBtn").addEventListener("click", async () => {
+        clearError("verifyError");
+        const btn = document.getElementById("resendOtpBtn");
+        btn.disabled = true;
+        try {
+          await Auth.resendOtp(pendingEmail);
+          btn.textContent = "Sent!";
+          setTimeout(() => {
+            btn.textContent = "Resend";
+            btn.disabled = false;
+          }, 3000);
+        } catch (error) {
+          showError("verifyError", error.message);
+          btn.disabled = false;
+        }
+      });
+
+      // ---------- forgot password ----------
+      document.getElementById("forgotForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearError("forgotError");
+        const email = document.getElementById("forgotEmail").value.trim();
+        const btn = document.getElementById("forgotSubmitBtn");
+
+        btn.disabled = true;
+        btn.textContent = "Sending...";
+        try {
+          const result = await Auth.forgotPassword(email);
+          showSuccess("forgotSuccess", result.message);
+        } catch (error) {
+          showError("forgotError", error.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Send reset link";
+        }
+      });
+    </script>
+  </body>
+</html>

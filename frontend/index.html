@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Sales Forecasting System</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="auth.js"></script>
+    <script>
+      Auth.requireLogin();
+    </script>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">SF</div>
+        <div>
+          <p>AI Sales</p>
+          <strong>Forecasting</strong>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a class="nav-item active" href="#dashboardSection" data-target="dashboardSection">Dashboard</a>
+        <a class="nav-item" href="#forecastSection" data-target="forecastSection">Forecast</a>
+        <a class="nav-item" href="#segmentsSection" data-target="segmentsSection">Segments</a>
+        <a class="nav-item" href="#reportsSection" data-target="reportsSection">Reports</a>
+      </nav>
+
+      <section class="panel">
+        <label for="csvFile">Sales CSV</label>
+        <input id="csvFile" type="file" accept=".csv" />
+      </section>
+
+      <section class="panel">
+        <label for="segmentSelect">Segment</label>
+        <select id="segmentSelect">
+          <option value="all">All segments</option>
+        </select>
+      </section>
+
+      <section class="panel">
+        <label>Date Range</label>
+        <div class="split-inputs">
+          <input id="startDate" type="date" />
+          <input id="endDate" type="date" />
+        </div>
+      </section>
+
+      <section class="panel">
+        <label>Forecast Window</label>
+        <div class="fixed-value">14 days</div>
+      </section>
+
+      <button id="exportBtn" class="primary-action" type="button">Export forecast</button>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user-avatar" id="userAvatar">--</div>
+          <span class="sidebar-user-name" id="userName">--</span>
+        </div>
+        <button id="logoutBtn" class="logout-btn" type="button">Log out</button>
+      </div>
+    </aside>
+
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Revenue intelligence workspace</p>
+          <h1>AI Sales Forecasting System</h1>
+        </div>
+        <div id="backendStatus" class="status-pill offline">
+          <span></span>
+          Python API offline
+        </div>
+      </header>
+
+      <section class="hero-band">
+        <div class="hero-copy">
+          <p>Forecast demand, compare sales channels, and spot revenue movement before it reaches the monthly report.</p>
+        </div>
+        <div class="hero-metrics">
+          <div>
+            <span id="growthSignal">+0.0%</span>
+            <small>Forecast change</small>
+          </div>
+          <div>
+            <span id="confidenceSignal">0%</span>
+            <small>Trend fit</small>
+          </div>
+        </div>
+      </section>
+
+      <section id="dashboardSection" class="kpi-grid">
+        <article class="metric-card">
+          <span>Total Revenue</span>
+          <strong id="totalRevenue">₹0</strong>
+          <small id="revenueNote">Across selected data</small>
+        </article>
+        <article class="metric-card">
+          <span>Average Sales</span>
+          <strong id="averageSales">₹0</strong>
+          <small>Per record</small>
+        </article>
+        <article class="metric-card">
+          <span>Highest Sale</span>
+          <strong id="highestSale">₹0</strong>
+          <small id="highestSaleNote">Best transaction</small>
+        </article>
+        <article class="metric-card">
+          <span>Total Records</span>
+          <strong id="recordCount">0</strong>
+          <small>Rows analyzed</small>
+        </article>
+      </section>
+
+      <section class="workspace-grid">
+        <article class="chart-panel wide">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Performance</p>
+              <h2>Sales Trend</h2>
+            </div>
+            <span id="dateWindow"></span>
+          </div>
+          <div id="trendChart" class="chart"></div>
+        </article>
+
+        <article id="forecastSection" class="chart-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Forecast</p>
+              <h2>14-Day Forecast</h2>
+            </div>
+          </div>
+          <div id="forecastChart" class="chart compact"></div>
+        </article>
+
+        <article id="segmentsSection" class="chart-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Segments</p>
+              <h2 id="segmentTitle">Sales by Product</h2>
+            </div>
+          </div>
+          <div id="segmentChart" class="bar-stack"></div>
+        </article>
+
+        <article class="chart-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Regions</p>
+              <h2>Sales by Region</h2>
+            </div>
+          </div>
+          <div id="regionPieChart" class="pie-wrap"></div>
+        </article>
+
+        <article id="reportsSection" class="chart-panel table-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Recent Data</p>
+              <h2>Latest Records</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Product</th>
+                  <th>Region</th>
+                  <th>Sales</th>
+                </tr>
+              </thead>
+              <tbody id="recordsTable"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script src="csv-loader.js"></script>
+    <script src="app.js"></script>
+    <script>
+      document.getElementById("userName").textContent = Auth.getUsername() || "signed in";
+      document.getElementById("userAvatar").textContent = (Auth.getUsername() || "?").slice(0, 2).toUpperCase();
+      document.getElementById("logoutBtn").addEventListener("click", () => Auth.logout());
+    </script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+pandas
+numpy
+mysql-connector-python
+scikit-learn
+joblib
+fastapi
+uvicorn
+pydantic
+bcrypt
+pyjwt
+python-dotenv
