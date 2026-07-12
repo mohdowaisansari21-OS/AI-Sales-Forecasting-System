@@ -48,8 +48,8 @@ const els = {
 };
 
 const FORECAST_DAYS = 14;
-const API_URL = "http://127.0.0.1:8000/api/forecast";
-const DATA_URL = "http://127.0.0.1:8000/api/data";
+const API_URL = "https://ai-sales-forecasting-system-nf6z.onrender.com/api/forecast"
+const DATA_URL = "https://ai-sales-forecasting-system-nf6z.onrender.com/api/data";
 const chartColors = ["#0f9f8f", "#2f6fed", "#f97066", "#f6a609", "#22a06b", "#7c5cff"];
 
 const backendState = { dataLoaded: false, forecastLoaded: false };
