@@ -54,6 +54,19 @@ const chartColors = ["#0f9f8f", "#2f6fed", "#f97066", "#f6a609", "#22a06b", "#7c
 
 const backendState = { dataLoaded: false, forecastLoaded: false };
 
+// Escapes user-controlled text (e.g. Product/Region values that can come
+// from an uploaded CSV) before it's interpolated into an innerHTML string,
+// so a crafted CSV cell like "<img src=x onerror=...>" renders as inert
+// text instead of executing as HTML/JS.
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function setBackendStatus(kind, isOnline) {
   // kind: "data" (GET /api/data) or "forecast" (POST /api/forecast).
   backendState[kind === "data" ? "dataLoaded" : "forecastLoaded"] = isOnline;
@@ -342,7 +355,7 @@ function drawSegments(rows) {
     .map(([name, value], index) => {
       return `
         <div class="bar-row">
-          <div class="bar-label"><span>${name}</span><span>${formatCurrency(value)}</span></div>
+          <div class="bar-label"><span>${escapeHtml(name)}</span><span>${formatCurrency(value)}</span></div>
           <div class="bar-track">
             <div class="bar-fill" style="width:${(value / max) * 100}%; background:${chartColors[index % chartColors.length]}"></div>
           </div>
@@ -386,13 +399,13 @@ function drawRegionPie(rows) {
       const sweep = (value / total) * 360;
       const path = pieSlicePath(100, 100, 88, angle, angle + sweep);
       angle += sweep;
-      return `<path d="${path}" fill="${chartColors[index % chartColors.length]}"><title>${name}: ${formatCurrency(value)}</title></path>`;
+      return `<path d="${path}" fill="${chartColors[index % chartColors.length]}"><title>${escapeHtml(name)}: ${formatCurrency(value)}</title></path>`;
     })
     .join("");
   const legend = entries
     .map(([name, value], index) => `
       <div class="pie-legend-row">
-        <span class="pie-legend-name"><span class="pie-dot" style="background:${chartColors[index % chartColors.length]}"></span>${name}</span>
+        <span class="pie-legend-name"><span class="pie-dot" style="background:${chartColors[index % chartColors.length]}"></span>${escapeHtml(name)}</span>
         <span>${Math.round((value / total) * 100)}%</span>
       </div>
     `)
@@ -416,8 +429,8 @@ function updateTable(rows) {
     .map((row) => `
       <tr>
         <td>${formatDate(row.Date)}</td>
-        <td>${row.Product}</td>
-        <td>${row.Region}</td>
+        <td>${escapeHtml(row.Product)}</td>
+        <td>${escapeHtml(row.Region)}</td>
         <td>${formatCurrency(row.Sales)}</td>
       </tr>
     `)

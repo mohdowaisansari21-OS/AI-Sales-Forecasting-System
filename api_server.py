@@ -6,11 +6,17 @@ import jwt
 import joblib
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi import FastAPI, HTTPException, Header, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
+
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+from secure import Secure
 
 from auth import (
     authenticate,
@@ -33,6 +39,11 @@ FORECAST_DAYS = 14
 MODEL_PATH = "sales_model.pkl"
 DATA_CSV_PATH = "sales_data.csv"
 FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://127.0.0.1:5500/frontend")
+
+# Set ENVIRONMENT=production in Render's dashboard (or just leave it unset -
+# "production" is the default, so /docs and /redoc are disabled unless you
+# explicitly set ENVIRONMENT=development while working locally).
+IS_PRODUCTION = os.environ.get("ENVIRONMENT", "production") == "production"
 
 # Loaded once at startup. This is the model produced by train_model.py
 # (trained on sales_data.csv via preprocess.py), not a live in-memory fit.
@@ -87,15 +98,39 @@ class ResetPasswordRequest(BaseModel):
     new_password: str
 
 
-app = FastAPI(title="AI Sales Forecasting API")
+app = FastAPI(
+    title="AI Sales Forecasting API",
+    docs_url=None if IS_PRODUCTION else "/docs",
+    redoc_url=None if IS_PRODUCTION else "/redoc",
+    openapi_url=None if IS_PRODUCTION else "/openapi.json",
+)
 
+# --- Rate limiting (protects login/OTP/password-reset from brute force) ---
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# --- CORS: only your real frontend origin may call this API ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://ai-sales-forecasting-system-1.onrender.com",
+        "http://127.0.0.1:5500",  # keep for local frontend testing; remove if not needed
+    ],
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+# --- Security headers on every response ---
+secure_headers = Secure.with_default_headers()
+
+
+@app.middleware("http")
+async def set_secure_headers(request: Request, call_next):
+    response = await call_next(request)
+    secure_headers.set_headers(response)
+    return response
 
 
 def get_current_user(authorization: str | None = Header(default=None)):
@@ -116,7 +151,8 @@ def get_current_user(authorization: str | None = Header(default=None)):
 
 
 @app.post("/api/auth/login")
-def login(payload: LoginRequest):
+@limiter.limit("5/minute")
+def login(request: Request, payload: LoginRequest):
     user = authenticate(payload.identifier, payload.password)
     if not user:
         raise HTTPException(status_code=401, detail="Incorrect username/email or password.")
@@ -130,7 +166,8 @@ def login(payload: LoginRequest):
 
 
 @app.post("/api/auth/register")
-def register(payload: RegisterRequest):
+@limiter.limit("5/minute")
+def register(request: Request, payload: RegisterRequest):
     first_name = payload.first_name.strip()
     last_name = payload.last_name.strip()
     email = payload.email.strip().lower()
@@ -170,7 +207,8 @@ def register(payload: RegisterRequest):
 
 
 @app.post("/api/auth/verify-otp")
-def verify_otp_route(payload: VerifyOtpRequest):
+@limiter.limit("5/minute")
+def verify_otp_route(request: Request, payload: VerifyOtpRequest):
     email = payload.email.strip().lower()
     if not verify_otp(email, payload.otp.strip()):
         raise HTTPException(status_code=400, detail="That code is invalid or has expired.")
@@ -181,7 +219,8 @@ def verify_otp_route(payload: VerifyOtpRequest):
 
 
 @app.post("/api/auth/resend-otp")
-def resend_otp_route(payload: ResendOtpRequest):
+@limiter.limit("3/hour")
+def resend_otp_route(request: Request, payload: ResendOtpRequest):
     email = payload.email.strip().lower()
     otp = resend_otp(email)
     if otp:
@@ -196,7 +235,8 @@ def resend_otp_route(payload: ResendOtpRequest):
 
 
 @app.post("/api/auth/forgot-password")
-def forgot_password(payload: ForgotPasswordRequest):
+@limiter.limit("3/hour")
+def forgot_password(request: Request, payload: ForgotPasswordRequest):
     email = payload.email.strip().lower()
     token = create_password_reset(email)
     if token:
@@ -213,7 +253,8 @@ def forgot_password(payload: ForgotPasswordRequest):
 
 
 @app.post("/api/auth/reset-password")
-def reset_password(payload: ResetPasswordRequest):
+@limiter.limit("5/minute")
+def reset_password(request: Request, payload: ResetPasswordRequest):
     email = payload.email.strip().lower()
     if len(payload.new_password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")

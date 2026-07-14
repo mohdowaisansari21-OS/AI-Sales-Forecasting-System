@@ -9,3 +9,5 @@ pydantic
 bcrypt
 pyjwt
 python-dotenv
+slowapi
+secure
