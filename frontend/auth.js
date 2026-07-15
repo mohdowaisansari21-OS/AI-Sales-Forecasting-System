@@ -4,7 +4,7 @@
  * Uses sessionStorage (not localStorage) so a session ends when the tab
  * closes, rather than persisting indefinitely on a shared machine.
  */
-const AUTH_API_BASE = "https://ai-sales-forecasting-system-nf6z.onrender.com";
+const AUTH_API_BASE = "https://ai-sales-forecasting-system-oym5.onrender.com";
 const TOKEN_KEY = "sf_token";
 const USERNAME_KEY = "sf_username";
 
