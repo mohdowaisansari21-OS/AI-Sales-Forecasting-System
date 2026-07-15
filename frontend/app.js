@@ -52,6 +52,11 @@ const API_URL = "https://ai-sales-forecasting-system-oym5.onrender.com/api/forec
 const DATA_URL = "https://ai-sales-forecasting-system-oym5.onrender.com/api/data";
 const chartColors = ["#0f9f8f", "#2f6fed", "#f97066", "#f6a609", "#22a06b", "#7c5cff"];
 
+// Upload guardrails - not a security boundary (this all runs client-side),
+// just protection against a huge file freezing the user's own browser tab.
+const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_UPLOAD_ROWS = 50000;
+
 const backendState = { dataLoaded: false, forecastLoaded: false };
 
 // Escapes user-controlled text (e.g. Product/Region values that can come
@@ -505,18 +510,69 @@ async function loadInitialData() {
   }
 }
 
+function isExcelFile(file) {
+  const name = file.name.toLowerCase();
+  return name.endsWith(".xlsx") || name.endsWith(".xls");
+}
+
+/**
+ * Converts the first sheet of an uploaded Excel workbook into the same
+ * CSV text format CsvLoader already knows how to parse - so Excel
+ * support is just a "convert to CSV text" adapter in front of the
+ * existing, already-tested CsvLoader logic, not a second parser.
+ */
+async function excelFileToCsvText(file) {
+  if (typeof XLSX === "undefined") {
+    throw new Error(
+      "Excel support isn't loaded. Make sure the SheetJS <script> tag is included in index.html before app.js."
+    );
+  }
+  const buffer = await file.arrayBuffer();
+  const workbook = XLSX.read(buffer, { type: "array" });
+  const firstSheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[firstSheetName];
+  return XLSX.utils.sheet_to_csv(sheet);
+}
+
 els.csvFile.addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  const text = await file.text();
+  // Guardrail only - this all runs in the browser, so a huge file can't
+  // hurt anyone but the person uploading it. This just stops their own
+  // tab from freezing on an accidental multi-hundred-MB selection.
+  if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+    const maxMb = (MAX_UPLOAD_SIZE_BYTES / (1024 * 1024)).toFixed(0);
+    const fileMb = (file.size / (1024 * 1024)).toFixed(1);
+    alert(`"${file.name}" is ${fileMb} MB, which is over the ${maxMb} MB upload limit. Please upload a smaller file.`);
+    event.target.value = ""; // reset so re-selecting the same file re-fires "change"
+    return;
+  }
 
   if (typeof CsvLoader === "undefined") {
     alert("CsvLoader is not loaded. Make sure csv-loader.js is included before app.js in index.html.");
     return;
   }
 
+  let text;
+  try {
+    text = isExcelFile(file) ? await excelFileToCsvText(file) : await file.text();
+  } catch (error) {
+    alert(`Could not read "${file.name}": ${error.message}`);
+    event.target.value = "";
+    return;
+  }
+
   const result = CsvLoader.load(text);
+
+  if (result.rows.length > MAX_UPLOAD_ROWS) {
+    alert(
+      `"${file.name}" has ${result.rows.length} usable rows, which is over the ${MAX_UPLOAD_ROWS.toLocaleString()}-row limit. ` +
+      `Please upload a smaller file.`
+    );
+    event.target.value = "";
+    return;
+  }
 
   if (result.rows.length) {
     allRows = result.rows;

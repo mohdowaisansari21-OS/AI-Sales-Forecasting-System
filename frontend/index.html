@@ -28,8 +28,8 @@
       </nav>
 
       <section class="panel">
-        <label for="csvFile">Sales CSV</label>
-        <input id="csvFile" type="file" accept=".csv" />
+        <label for="csvFile">Sales CSV or Excel</label>
+        <input type="file" id="csvFile" accept=".csv,.xlsx,.xls" />
       </section>
 
       <section class="panel">
@@ -179,7 +179,7 @@
         </article>
       </section>
     </main>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="csv-loader.js"></script>
     <script src="app.js"></script>
     <script>

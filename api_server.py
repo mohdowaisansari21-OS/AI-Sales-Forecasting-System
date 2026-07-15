@@ -264,7 +264,8 @@ def reset_password(request: Request, payload: ResetPasswordRequest):
 
 
 @app.get("/api/data")
-def get_data(user: str = Depends(get_current_user)):
+@limiter.limit("30/minute")
+def get_data(request: Request, user: str = Depends(get_current_user)):
     """
     Serves the full contents of sales_data.csv as JSON, so the frontend
     always reflects whatever data is on the server - not a hardcoded
@@ -311,7 +312,8 @@ def health():
 
 
 @app.get("/api/forecast/trained")
-def forecast_trained(days: int = FORECAST_DAYS, user: str = Depends(get_current_user)):
+@limiter.limit("20/minute")
+def forecast_trained(request: Request, days: int = FORECAST_DAYS, user: str = Depends(get_current_user)):
     """
     Forecast using the model saved by train_model.py (trained on
     sales_data.csv), instead of fitting a new model on posted rows.
@@ -355,7 +357,8 @@ def forecast_trained(days: int = FORECAST_DAYS, user: str = Depends(get_current_
 
 
 @app.post("/api/forecast")
-def forecast(payload: ForecastRequest, user: str = Depends(get_current_user)):
+@limiter.limit("10/minute")
+def forecast(request: Request, payload: ForecastRequest, user: str = Depends(get_current_user)):
     if len(payload.rows) < 2:
         raise HTTPException(status_code=400, detail="At least 2 sales records are required.")
 
